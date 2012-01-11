@@ -20,6 +20,11 @@ module AlterTable
       def remove_column(*column_names)
         push_alterations(*column_names.flatten.map { |column_name| "DROP COLUMN #{quote_column_name(column_name)}" })
       end
+
+      def rename_column(original_name, new_name, type, options = {})
+        rename_column_sql = "CHANGE COLUMN #{quote_column_name(original_name)} #{quote_column_name(new_name)} #{type_to_sql(type, options[:limit], options[:precision], options[:scale])}"
+        push_alterations(rename_column_sql)
+      end
     end
 
     module IndexAlterations # :nodoc:
