@@ -1,47 +1,43 @@
 require 'spec_helper'
 
 describe AlterTable::TableAlterer::ColumnAlterations do
-  before(:each) do
-    @connection         = mock('Connection')
+  include_context 'ActiveRecord configuration'
 
-    @connection_adapter = ActiveRecord::ConnectionAdapters::AbstractAdapter.new(@connection).tap do |adapter|
-      class << adapter
-        def native_database_types
-          { :decimal => 'integer' }
-        end
-      end
-    end
-
-    @alterer = Object.new.tap do |object|
-      object.instance_variable_set(:@adapter, @connection_adapter)
-      object.class_eval do
-        include AlterTable::TableAlterer::ColumnAlterations
-        attr_reader :adapter
-      end
-    end
-  end
+  subject { alterer }
 
   describe '#add_column' do
     it 'handles the simple type case' do
-      @alterer.should_receive(:push_alterations).with('ADD COLUMN foo string')
-      @alterer.add_column(:foo, :string)
+      subject.should_receive(:push_alterations).with('ADD COLUMN foo string')
+      subject.add_column(:foo, :string)
     end
 
     it 'handles the options' do
-      @alterer.should_receive(:push_alterations).with('ADD COLUMN foo integer(10)')
-      @alterer.add_column(:foo, :decimal, :precision => 10)
+      subject.should_receive(:push_alterations).with('ADD COLUMN foo integer(10)')
+      subject.add_column(:foo, :decimal, :precision => 10)
     end
   end
 
   describe '#remove_column' do
     it 'handles the simple case' do
-      @alterer.should_receive(:push_alterations).with('DROP COLUMN foo')
-      @alterer.remove_column(:foo)
+      subject.should_receive(:push_alterations).with('DROP COLUMN foo')
+      subject.remove_column(:foo)
     end
 
     it 'handles multiple columns' do
-      @alterer.should_receive(:push_alterations).with('DROP COLUMN foo', 'DROP COLUMN bar')
-      @alterer.remove_column(:foo, :bar)
+      subject.should_receive(:push_alterations).with('DROP COLUMN foo', 'DROP COLUMN bar')
+      subject.remove_column(:foo, :bar)
+    end
+  end
+
+  describe '#rename_column' do
+    it 'handles the simple case' do
+      subject.should_receive(:push_alterations).with('CHANGE COLUMN foo bar string')
+      subject.rename_column(:foo, :bar, :string)
+    end
+
+    it 'handles the options' do
+      subject.should_receive(:push_alterations).with('ADD COLUMN foo integer(10)')
+      subject.add_column(:foo, :decimal, :precision => 10)
     end
   end
 end
