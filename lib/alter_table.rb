@@ -23,6 +23,7 @@ module AlterTable
 
       def rename_column(original_name, new_name, type, options = {})
         rename_column_sql = "CHANGE COLUMN #{quote_column_name(original_name)} #{quote_column_name(new_name)} #{type_to_sql(type, options[:limit], options[:precision], options[:scale])}"
+        add_column_options!(rename_column_sql, options)
         push_alterations(rename_column_sql)
       end
     end
