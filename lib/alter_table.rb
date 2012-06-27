@@ -34,9 +34,12 @@ module AlterTable
       end
 
       def add_index(column_name, options = {})
-        column_names = Array(column_name)
-        index_name   = index_name(table, :column => column_names)
-        index_type   = options
+        column_names           = Array(column_name)
+        index_type, index_name = options, index_name(table, :column => column_names)
+        if Hash === options
+          index_name = options[:name] || index_name
+          index_type = options[:unique] ? "UNIQUE" : ""
+        end
 
         if index_name.length > index_name_length
           logger.warn("Index name '#{index_name}' on table '#{table}' is too long; the limit is #{index_name_length} characters. Skipping.")
@@ -48,7 +51,7 @@ module AlterTable
         end
         quoted_column_names = quoted_columns_for_index(column_names, options).join(", ")
 
-        push_alterations("ADD INDEX #{quote_column_name(index_name)} #{index_type} (#{quoted_column_names})")
+        push_alterations("ADD #{index_type} INDEX #{quote_column_name(index_name)} (#{quoted_column_names})")
       end
 
       def remove_index(options = {})
