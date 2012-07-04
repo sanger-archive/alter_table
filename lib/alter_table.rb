@@ -136,6 +136,7 @@ module ActiveRecord # :nodoc:
   module ConnectionAdapters # :nodoc:
     class AbstractAdapter # :nodoc:
       include AlterTable
+      include AlterTable::CloneTable
 
       def adapter_for_alter_table
         self
