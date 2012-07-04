@@ -2,7 +2,7 @@ require 'active_support'
 
 module AlterTable
   def alter_table(name, &block)
-    TableAlterer.new(name, self, &block)
+    TableAlterer.new(name, adapter_for_alter_table, &block)
   end
 
   class TableAlterer # :nodoc:
@@ -100,6 +100,34 @@ module AlterTable
     end
     private :logger
   end
+
+  module CloneTable
+    def clone_table(name, options = {}, &block)
+      source, destination = name, options[:to]
+      source, destination = options[:from], name if destination.nil?
+      raise 'Specify source & destination table names' if source.nil? or destination.nil?
+      TableCloner.new(source, destination, adapter_for_alter_table, &block)
+    end
+
+    class TableCloner
+      def initialize(source, destination, adapter, &block)
+        @source, @destination, @adapter = source, destination, adapter
+        execute
+        alter_table(@destination, &block) if block_given?
+      end
+
+      include AlterTable
+
+      attr_reader :source, :destination, :adapter
+      private :source, :destination, :adapter
+      alias_method(:adapter_for_alter_table, :adapter)
+      delegate :quote_table_name, :to => :adapter
+
+      def execute
+        adapter.execute("CREATE TABLE #{quote_table_name(destination)} LIKE #{quote_table_name(source)}")
+      end
+    end
+  end
 end
 
 require 'active_record'
@@ -108,6 +136,11 @@ module ActiveRecord # :nodoc:
   module ConnectionAdapters # :nodoc:
     class AbstractAdapter # :nodoc:
       include AlterTable
+
+      def adapter_for_alter_table
+        self
+      end
+      private :adapter_for_alter_table
     end
   end
 end
